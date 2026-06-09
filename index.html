@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小炮的道歉信</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #e1bee7 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .letter-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 48px 64px;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+            max-width: 520px;
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .letter-content {
+            font-size: 18px;
+            line-height: 2;
+            color: #424242;
+            text-align: center;
+            min-height: 120px;
+            margin-bottom: 32px;
+            white-space: pre-wrap;
+            font-weight: 500;
+        }
+
+        .continue-btn {
+            padding: 14px 48px;
+            font-size: 16px;
+            font-weight: 500;
+            background: #e91e63;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            box-shadow: 0 3px 5px -1px rgba(233, 30, 99, 0.2), 
+                        0 6px 10px 0 rgba(233, 30, 99, 0.14), 
+                        0 1px 18px 0 rgba(233, 30, 99, 0.12);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: scale(0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .continue-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s, height 0.4s;
+        }
+
+        .continue-btn:hover::before {
+            width: 200px;
+            height: 200px;
+        }
+
+        .continue-btn.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .continue-btn:hover {
+            background: #ec407a;
+            box-shadow: 0 5px 5px -3px rgba(233, 30, 99, 0.2), 
+                        0 8px 10px 1px rgba(233, 30, 99, 0.14), 
+                        0 3px 14px 2px rgba(233, 30, 99, 0.12);
+        }
+
+        .continue-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 4px -1px rgba(233, 30, 99, 0.2), 
+                        0 4px 5px 0 rgba(233, 30, 99, 0.14), 
+                        0 1px 10px 0 rgba(233, 30, 99, 0.12);
+        }
+
+        .flying-text {
+            position: absolute;
+            font-size: 18px;
+            font-weight: 500;
+            color: #9e9e9e;
+            pointer-events: none;
+            animation: flyAway 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes flyAway {
+            0% {
+                opacity: 1;
+                transform: translateY(0) rotate(0deg) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-80px) rotate(15deg) scale(0.8);
+            }
+        }
+
+        .character-container {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .character {
+            width: 180px;
+            height: 180px;
+            cursor: grab;
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .character:active {
+            cursor: grabbing;
+        }
+
+        .character.hit {
+            animation: hitEffect 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes hitEffect {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-12deg) scale(0.95); }
+            75% { transform: rotate(12deg) scale(0.95); }
+        }
+
+        .bubble {
+            position: absolute;
+            top: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 16px 28px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #e91e63;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+        }
+
+        .bubble.show {
+            opacity: 1;
+        }
+
+        .bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid white;
+        }
+
+        .tap-hint {
+            margin-top: 24px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #9e9e9e;
+            animation: bounce 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="letter-container" id="letterContainer">
+        <div class="letter-content" id="letterContent"></div>
+        <button class="continue-btn" id="continueBtn" onclick="nextSentence()">点击继续 →</button>
+    </div>
+
+    <div class="character-container" id="characterContainer">
+        <div class="bubble" id="bubble"></div>
+        <img src="character.png" 
+             class="character" id="character" 
+             onmousedown="startDrag(event)" onmouseup="endDrag(event)" onmousemove="drag(event)" 
+             ontouchstart="startDrag(event)" ontouchend="endDrag(event)" ontouchmove="drag(event)">
+        <div class="tap-hint">点击或滑动小人~</div>
+    </div>
+
+    <script>
+        const letterContent = document.getElementById('letterContent');
+        const continueBtn = document.getElementById('continueBtn');
+        const letterContainer = document.getElementById('letterContainer');
+        const characterContainer = document.getElementById('characterContainer');
+        const character = document.getElementById('character');
+        const bubble = document.getElementById('bubble');
+
+        const sentences = [
+            "亲爱的小泡芙：\n",
+            "你好呀\n",
+            "我是小炮！\n",
+            "今天小炮不应该惹你生气，\n",
+            "不应该去随意揣测小泡芙的状态呢。\n",
+            "小炮只想安安稳稳的陪着小泡芙!\n",           
+	    "我们一定会互相陪伴好久好久的~！\n",
+	    "小炮也会继续给小泡芙带来快乐 继续陪着小泡芙 偶尔给小泡芙带来惊喜！ 小泡芙永远是老大！ 是第一位！\n",
+            "小炮已经知错~\n",
+            "小炮保证以后再也不敢了~"
+        ];
+
+        const apologyMessages = [
+            "小炮知道错了",
+            "小炮再也不敢了",
+            "小炮以后一定好好听小泡芙的话",
+            "小炮一定一直一直永远只对小泡芙好"
+        ];
+
+        const characterImages = {
+            normal: "character.png",
+            hit: "character2.png"
+        };
+
+        let currentSentenceIndex = 0;
+        let currentCharIndex = 0;
+        let isTyping = false;
+        let isDragging = false;
+        let lastPosition = { x: 0, y: 0 };
+
+        function typeWriter() {
+            if (currentSentenceIndex >= sentences.length) {
+                showCharacter();
+                return;
+            }
+
+            isTyping = true;
+            const sentence = sentences[currentSentenceIndex];
+
+            if (currentCharIndex < sentence.length) {
+                letterContent.innerHTML += sentence.charAt(currentCharIndex);
+                currentCharIndex++;
+                setTimeout(typeWriter, 80);
+            } else {
+                isTyping = false;
+                continueBtn.classList.add('show');
+            }
+        }
+
+        function nextSentence() {
+            if (isTyping) return;
+
+            continueBtn.classList.remove('show');
+            
+            const textToFly = sentences[currentSentenceIndex];
+            const lines = textToFly.trim().split('\n');
+            
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    const flyingText = document.createElement('div');
+                    flyingText.className = 'flying-text';
+                    flyingText.textContent = line;
+                    flyingText.style.left = `${50 + (Math.random() - 0.5) * 30}%`;
+                    flyingText.style.top = `${50 + (Math.random() - 0.5) * 20}%`;
+                    flyingText.style.animationDelay = `${index * 0.1}s`;
+                    document.body.appendChild(flyingText);
+                    
+                    setTimeout(() => {
+                        flyingText.remove();
+                    }, 1000);
+                }, index * 150);
+            });
+
+            setTimeout(() => {
+                letterContent.innerHTML = '';
+                currentSentenceIndex++;
+                currentCharIndex = 0;
+                typeWriter();
+            }, lines.length * 150 + 200);
+        }
+
+        function showCharacter() {
+            letterContainer.style.display = 'none';
+            characterContainer.style.display = 'flex';
+        }
+
+        function startDrag(e) {
+            isDragging = true;
+            const touch = e.touches ? e.touches[0] : e;
+            lastPosition = { x: touch.clientX, y: touch.clientY };
+            
+            const randomIndex = Math.floor(Math.random() * apologyMessages.length);
+            bubble.textContent = apologyMessages[randomIndex];
+            bubble.classList.add('show');
+            
+            character.src = characterImages.hit;
+            
+            character.classList.add('hit');
+            setTimeout(() => {
+                character.classList.remove('hit');
+                character.src = characterImages.normal;
+            }, 300);
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            const touch = e.touches ? e.touches[0] : e;
+            const deltaX = touch.clientX - lastPosition.x;
+            const deltaY = touch.clientY - lastPosition.y;
+            
+            const currentTransform = character.style.transform;
+            const currentX = parseFloat(currentTransform.match(/translateX\(([^)]+)\)/)?.[1] || '0');
+            const currentY = parseFloat(currentTransform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
+            
+            character.style.transform = `translateX(${currentX + deltaX}px) translateY(${currentY + deltaY}px)`;
+            
+            lastPosition = { x: touch.clientX, y: touch.clientY };
+        }
+
+        function endDrag() {
+            isDragging = false;
+        }
+
+        typeWriter();
+    </script>
+</body>
+</html>
