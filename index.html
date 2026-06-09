@@ -11,15 +11,18 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Noto Sans SC', sans-serif;
             background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #e1bee7 100%);
             min-height: 100vh;
-            overflow: hidden;
+            /* 移除overflow:hidden，修复触摸事件拦截 */
             position: relative;
+            /* 禁用移动端默认手势、长按选中、弹窗 */
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
-
         .letter-container {
             position: absolute;
             top: 50%;
@@ -36,7 +39,6 @@
             align-items: center;
             justify-content: center;
         }
-
         .letter-content {
             font-size: 18px;
             line-height: 2;
@@ -47,7 +49,6 @@
             white-space: pre-wrap;
             font-weight: 500;
         }
-
         .continue-btn {
             padding: 14px 48px;
             font-size: 16px;
@@ -66,7 +67,6 @@
             position: relative;
             overflow: hidden;
         }
-
         .continue-btn::before {
             content: '';
             position: absolute;
@@ -79,31 +79,26 @@
             transform: translate(-50%, -50%);
             transition: width 0.4s, height 0.4s;
         }
-
         .continue-btn:hover::before {
             width: 200px;
             height: 200px;
         }
-
         .continue-btn.show {
             opacity: 1;
             transform: scale(1);
         }
-
         .continue-btn:hover {
             background: #ec407a;
             box-shadow: 0 5px 5px -3px rgba(233, 30, 99, 0.2), 
                         0 8px 10px 1px rgba(233, 30, 99, 0.14), 
                         0 3px 14px 2px rgba(233, 30, 99, 0.12);
         }
-
         .continue-btn:active {
             transform: scale(0.96);
             box-shadow: 0 2px 4px -1px rgba(233, 30, 99, 0.2), 
                         0 4px 5px 0 rgba(233, 30, 99, 0.14), 
                         0 1px 10px 0 rgba(233, 30, 99, 0.12);
         }
-
         .flying-text {
             position: absolute;
             font-size: 18px;
@@ -112,7 +107,6 @@
             pointer-events: none;
             animation: flyAway 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
-
         @keyframes flyAway {
             0% {
                 opacity: 1;
@@ -123,7 +117,6 @@
                 transform: translateY(-80px) rotate(15deg) scale(0.8);
             }
         }
-
         .character-container {
             display: none;
             position: absolute;
@@ -133,7 +126,6 @@
             flex-direction: column;
             align-items: center;
         }
-
         .character {
             width: 180px;
             height: 180px;
@@ -142,22 +134,21 @@
             user-select: none;
             border-radius: 50%;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+            /* 扩大触摸热区，解决手机点击不准 */
+            padding: 10px;
+            margin: -10px;
         }
-
         .character:active {
             cursor: grabbing;
         }
-
         .character.hit {
             animation: hitEffect 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         @keyframes hitEffect {
             0%, 100% { transform: rotate(0deg) scale(1); }
             25% { transform: rotate(-12deg) scale(0.95); }
             75% { transform: rotate(12deg) scale(0.95); }
         }
-
         .bubble {
             position: absolute;
             top: -70px;
@@ -174,11 +165,9 @@
             transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             white-space: nowrap;
         }
-
         .bubble.show {
             opacity: 1;
         }
-
         .bubble::after {
             content: '';
             position: absolute;
@@ -191,7 +180,6 @@
             border-right: 8px solid transparent;
             border-top: 8px solid white;
         }
-
         .tap-hint {
             margin-top: 24px;
             font-size: 14px;
@@ -199,7 +187,6 @@
             color: #9e9e9e;
             animation: bounce 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
-
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-8px); }
@@ -211,16 +198,11 @@
         <div class="letter-content" id="letterContent"></div>
         <button class="continue-btn" id="continueBtn" onclick="nextSentence()">点击继续 →</button>
     </div>
-
     <div class="character-container" id="characterContainer">
         <div class="bubble" id="bubble"></div>
-        <img src="character.png" 
-             class="character" id="character" 
-             onmousedown="startDrag(event)" onmouseup="endDrag(event)" onmousemove="drag(event)" 
-             ontouchstart="startDrag(event)" ontouchend="endDrag(event)" ontouchmove="drag(event)">
+        <img src="character.png" class="character" id="character">
         <div class="tap-hint">点击或滑动小人~</div>
     </div>
-
     <script>
         const letterContent = document.getElementById('letterContent');
         const continueBtn = document.getElementById('continueBtn');
@@ -228,7 +210,6 @@
         const characterContainer = document.getElementById('characterContainer');
         const character = document.getElementById('character');
         const bubble = document.getElementById('bubble');
-
         const sentences = [
             "亲爱的小泡芙：\n",
             "你好呀\n",
@@ -241,34 +222,39 @@
             "小炮已经知错~\n",
             "小炮保证以后再也不敢了~"
         ];
-
         const apologyMessages = [
             "小炮知道错了",
             "小炮再也不敢了",
             "小炮以后一定好好听小泡芙的话",
             "小炮一定一直一直永远只对小泡芙好"
         ];
-
         const characterImages = {
             normal: "character.png",
             hit: "character2.png"
         };
-
         let currentSentenceIndex = 0;
         let currentCharIndex = 0;
         let isTyping = false;
         let isDragging = false;
         let lastPosition = { x: 0, y: 0 };
+        let isImgChanging = false;
+
+        // 预加载图片，解决移动端缓存问题
+        function preloadImg() {
+            let img1 = new Image();
+            let img2 = new Image();
+            img1.src = characterImages.normal;
+            img2.src = characterImages.hit;
+        }
+        preloadImg();
 
         function typeWriter() {
             if (currentSentenceIndex >= sentences.length) {
                 showCharacter();
                 return;
             }
-
             isTyping = true;
             const sentence = sentences[currentSentenceIndex];
-
             if (currentCharIndex < sentence.length) {
                 letterContent.innerHTML += sentence.charAt(currentCharIndex);
                 currentCharIndex++;
@@ -278,10 +264,8 @@
                 continueBtn.classList.add('show');
             }
         }
-
         function nextSentence() {
             if (isTyping) return;
-
             continueBtn.classList.remove('show');
             
             const textToFly = sentences[currentSentenceIndex];
@@ -302,7 +286,6 @@
                     }, 1000);
                 }, index * 150);
             });
-
             setTimeout(() => {
                 letterContent.innerHTML = '';
                 currentSentenceIndex++;
@@ -310,13 +293,28 @@
                 typeWriter();
             }, lines.length * 150 + 200);
         }
-
         function showCharacter() {
             letterContainer.style.display = 'none';
             characterContainer.style.display = 'flex';
         }
 
+        // 统一绑定鼠标+触摸事件
+        function bindEvent() {
+            character.addEventListener('mousedown', startDrag);
+            character.addEventListener('mouseup', endDrag);
+            character.addEventListener('mousemove', drag);
+
+            character.addEventListener('touchstart', startDrag, { passive: false });
+            character.addEventListener('touchend', endDrag);
+            character.addEventListener('touchmove', drag, { passive: false });
+        }
+        bindEvent();
+
         function startDrag(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (isImgChanging) return;
+
             isDragging = true;
             const touch = e.touches ? e.touches[0] : e;
             lastPosition = { x: touch.clientX, y: touch.clientY };
@@ -325,17 +323,21 @@
             bubble.textContent = apologyMessages[randomIndex];
             bubble.classList.add('show');
             
-            character.src = characterImages.hit;
-            
+            // 加时间戳绕过图片缓存
+            character.src = characterImages.hit + '?_t=' + Date.now();
             character.classList.add('hit');
+            isImgChanging = true;
+
             setTimeout(() => {
                 character.classList.remove('hit');
-                character.src = characterImages.normal;
+                character.src = characterImages.normal + '?_t=' + Date.now();
+                bubble.classList.remove('show');
+                isImgChanging = false;
             }, 300);
         }
-
         function drag(e) {
             if (!isDragging) return;
+            e.preventDefault();
             const touch = e.touches ? e.touches[0] : e;
             const deltaX = touch.clientX - lastPosition.x;
             const deltaY = touch.clientY - lastPosition.y;
@@ -345,14 +347,13 @@
             const currentY = parseFloat(currentTransform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
             
             character.style.transform = `translateX(${currentX + deltaX}px) translateY(${currentY + deltaY}px)`;
-            
             lastPosition = { x: touch.clientX, y: touch.clientY };
         }
-
         function endDrag() {
             isDragging = false;
         }
 
+        // 初始化启动打字机
         typeWriter();
     </script>
 </body>
