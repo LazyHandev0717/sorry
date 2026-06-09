@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 优化移动端viewport，消除300ms点击延迟 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>小炮的道歉信</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -15,10 +16,10 @@
             font-family: 'Noto Sans SC', sans-serif;
             background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #e1bee7 100%);
             min-height: 100vh;
-            /* 移除overflow:hidden，修复触摸事件拦截 */
+            overflow: hidden;
             position: relative;
-            /* 禁用移动端默认手势、长按选中、弹窗 */
-            touch-action: none;
+            /* 禁止浏览器默认触摸行为，解决滚动/缩放干扰 */
+            touch-action: manipulation;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
@@ -129,12 +130,12 @@
         .character {
             width: 180px;
             height: 180px;
-            cursor: grab;
+            cursor: pointer;
             transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
             border-radius: 50%;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-            /* 扩大触摸热区，解决手机点击不准 */
+            /* 扩大触摸热区，提升点击准确率 */
             padding: 10px;
             margin: -10px;
         }
@@ -160,7 +161,7 @@
             font-size: 15px;
             font-weight: 500;
             color: #e91e63;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0.23);
             opacity: 0;
             transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             white-space: nowrap;
@@ -200,6 +201,7 @@
     </div>
     <div class="character-container" id="characterContainer">
         <div class="bubble" id="bubble"></div>
+        <!-- 移除内联触摸事件，改用JS统一绑定 -->
         <img src="character.png" class="character" id="character">
         <div class="tap-hint">点击或滑动小人~</div>
     </div>
@@ -210,6 +212,7 @@
         const characterContainer = document.getElementById('characterContainer');
         const character = document.getElementById('character');
         const bubble = document.getElementById('bubble');
+
         const sentences = [
             "亲爱的小泡芙：\n",
             "你好呀\n",
@@ -217,8 +220,8 @@
             "今天小炮不应该惹你生气，\n",
             "不应该去随意揣测小泡芙的状态呢。\n",
             "小炮只想安安稳稳的陪着小泡芙!\n",           
-	    "我们一定会互相陪伴好久好久的~！\n",
-	    "小炮也会继续给小泡芙带来快乐 继续陪着小泡芙 偶尔给小泡芙带来惊喜！ 小泡芙永远是老大！ 是第一位！\n",
+            "我们一定会互相陪伴好久好久的~！\n",
+            "小炮也会继续给小泡芙带来快乐 继续陪着小泡芙 偶尔给小泡芙带来惊喜！ 小泡芙永远是老大！ 是第一位！\n",
             "小炮已经知错~\n",
             "小炮保证以后再也不敢了~"
         ];
@@ -232,22 +235,25 @@
             normal: "character.png",
             hit: "character2.png"
         };
+
         let currentSentenceIndex = 0;
         let currentCharIndex = 0;
         let isTyping = false;
         let isDragging = false;
         let lastPosition = { x: 0, y: 0 };
-        let isImgChanging = false;
+        // 防重复点击锁：解决连续点击失效核心问题
+        let isRunning = false;
 
-        // 预加载图片，解决移动端缓存问题
-        function preloadImg() {
+        // 预加载两张图片，避免加载延迟
+        function preloadImage() {
             let img1 = new Image();
             let img2 = new Image();
             img1.src = characterImages.normal;
             img2.src = characterImages.hit;
         }
-        preloadImg();
+        preloadImage();
 
+        // 打字机效果
         function typeWriter() {
             if (currentSentenceIndex >= sentences.length) {
                 showCharacter();
@@ -264,6 +270,7 @@
                 continueBtn.classList.add('show');
             }
         }
+
         function nextSentence() {
             if (isTyping) return;
             continueBtn.classList.remove('show');
@@ -293,48 +300,46 @@
                 typeWriter();
             }, lines.length * 150 + 200);
         }
+
         function showCharacter() {
             letterContainer.style.display = 'none';
             characterContainer.style.display = 'flex';
         }
 
-        // 统一绑定鼠标+触摸事件
-        function bindEvent() {
-            character.addEventListener('mousedown', startDrag);
-            character.addEventListener('mouseup', endDrag);
-            character.addEventListener('mousemove', drag);
+        // 核心：点击/触摸切换图片逻辑
+        function switchImage() {
+            // 正在执行中则直接返回，防止连续点击错乱
+            if (isRunning) return;
+            isRunning = true;
 
-            character.addEventListener('touchstart', startDrag, { passive: false });
-            character.addEventListener('touchend', endDrag);
-            character.addEventListener('touchmove', drag, { passive: false });
-        }
-        bindEvent();
-
-        function startDrag(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (isImgChanging) return;
-
-            isDragging = true;
-            const touch = e.touches ? e.touches[0] : e;
-            lastPosition = { x: touch.clientX, y: touch.clientY };
-            
+            // 随机弹窗文字
             const randomIndex = Math.floor(Math.random() * apologyMessages.length);
             bubble.textContent = apologyMessages[randomIndex];
             bubble.classList.add('show');
-            
-            // 加时间戳绕过图片缓存
-            character.src = characterImages.hit + '?_t=' + Date.now();
-            character.classList.add('hit');
-            isImgChanging = true;
 
+            // 加时间戳绕过浏览器图片缓存，确保每次都加载新图
+            character.src = characterImages.hit + '?_=' + Date.now();
+            character.classList.add('hit');
+
+            // 300ms后恢复原图
             setTimeout(() => {
                 character.classList.remove('hit');
-                character.src = characterImages.normal + '?_t=' + Date.now();
+                character.src = characterImages.normal + '?_=' + Date.now();
                 bubble.classList.remove('show');
-                isImgChanging = false;
+                isRunning = false; // 解锁，允许下一次点击
             }, 300);
         }
+
+        // 拖拽逻辑（保留原有滑动功能）
+        function startDrag(e) {
+            e.preventDefault();
+            isDragging = true;
+            const touch = e.touches ? e.touches[0] : e;
+            lastPosition = { x: touch.clientX, y: touch.clientY };
+            // 拖拽同时触发图片切换
+            switchImage();
+        }
+
         function drag(e) {
             if (!isDragging) return;
             e.preventDefault();
@@ -349,11 +354,28 @@
             character.style.transform = `translateX(${currentX + deltaX}px) translateY(${currentY + deltaY}px)`;
             lastPosition = { x: touch.clientX, y: touch.clientY };
         }
+
         function endDrag() {
             isDragging = false;
         }
 
-        // 初始化启动打字机
+        // 统一绑定事件：区分点击、触摸、拖拽，解决移动端事件叠加问题
+        character.addEventListener('click', switchImage);
+        character.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            // 短按=点击切换，长按/滑动=拖拽
+            const touchTime = setTimeout(() => {
+                startDrag(e);
+            }, 120);
+            // 手指松开取消拖拽计时
+            character.addEventListener('touchend', () => {
+                clearTimeout(touchTime);
+            }, { once: true });
+        }, { passive: false });
+        character.addEventListener('touchmove', drag, { passive: false });
+        character.addEventListener('touchend', endDrag);
+
+        // 页面初始化
         typeWriter();
     </script>
 </body>
